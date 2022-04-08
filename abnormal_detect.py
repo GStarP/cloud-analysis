@@ -8,7 +8,11 @@ import time
 '''
 读取数据
 '''
-df = pd.read_csv('./device-2.csv')
+# 完整数据的分析报告
+# filename = './example.csv'
+# 已上传数据量的分析报告
+filename = './temp_humidity_sensor_1.csv'
+df = pd.read_csv(filename)
 
 '''
 数据预处理
@@ -139,24 +143,34 @@ content = content + '可信: ' + str(reliable_df['label'].count()) + \
 content = content + '\n'
 
 # 不可信部分
-content = content + '【不可信数据】\n'
-content = content + '均值偏差:\n'
-content = content + str(df_label[2][1]) + '\n'
-content = content + '相对均值偏差:\n'
-content = content + str(unreliable_bias) + '\n'
-content = content + '时间戳:\n'
-content = content + ','.join(map(str, list(unreliable_df.index))) + '\n'
-content = content + '\n'
+if (unreliable_df.size > 0):
+    content = content + '【不可信数据】\n'
+    content = content + '相对均值偏差:\n'
+    content = content + str(unreliable_bias) + '\n'
+    content = content + '示例数据:\n'
+    for i in range(3):
+        if (i < unreliable_df.size):
+            content += 'ts=' + str(unreliable_df.index[0]) +\
+                ', real=' + str(unreliable_df.iloc[0][ATTR]) +\
+                ', predict=' + str(unreliable_df.iloc[0]['predict']) + '\n'
+    content = content + '全部数据:\n'
+    content = content + ','.join(map(str, list(unreliable_df.index))) + '\n'
+    content = content + '\n'
 
 # 不确定部分
-content = content + '【不确定数据】\n'
-content = content + '均值偏差:\n'
-content = content + str(df_label[1][1]) + '\n'
-content = content + '相对均值偏差:\n'
-content = content + str(neural_bias) + '\n'
-content = content + '时间戳:\n'
-content = content + ','.join(map(str, list(neural_df.index))) + '\n'
-content = content + '\n'
+if (neural_df.size > 0):
+    content = content + '【不确定数据】\n'
+    content = content + '相对均值偏差:\n'
+    content = content + str(neural_bias) + '\n'
+    content = content + '示例数据:\n'
+    for i in range(3):
+        if (i < neural_df.size):
+            content += 'ts=' + str(neural_df.index[0]) +\
+                ', real=' + str(neural_df.iloc[0][ATTR]) +\
+                ', predict=' + str(neural_df.iloc[0]['predict']) + '\n'
+    content = content + '全部数据:\n'
+    content = content + ','.join(map(str, list(neural_df.index))) + '\n'
+    content = content + '\n'
 
 # 可信部分
 content = content + '【可信数据】\n'

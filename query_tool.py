@@ -5,8 +5,8 @@ import requests
 import json
 import time
 
-# 云平台 IP
-url = "http://172.19.241.103:8080"
+# 云平台地址
+url = "http://172.19.241.103:18080"
 
 
 def getJWTToken(username, password):
@@ -22,25 +22,46 @@ def getJWTToken(username, password):
     return 'Bearer ' + res.json()['token']
 
 
+# 获取当前时间的 Unix Timestamp
 def curUnixTimestamp():
     return int(round(time.time() * 1000))
 
 
-def queryDeviceData(token):
-    device_id = '3acccbf0-ae8b-11ec-9b68-311e1b039506'
+def queryDeviceData(token, device_id, keys):
     # 请求历史数据接口
+    curTs = curUnixTimestamp()
     res = requests.get(
         url + '/api/plugins/telemetry/DEVICE/' + device_id + '/values/timeseries',
         params={
-            'keys': ['temp'],
+            'keys': keys,
             'startTs': 0,
-            'endTs': curUnixTimestamp()
+            'endTs': curTs,
+            'limit': 100000
         },
         headers={
             'Content-Type': 'application/json',
             'X-Authorization': token
         })
-    print(res.json())
+    data = res.json()
+    # print(data)
+
+    # 持久化为 CSV 文件
+    content = 'ts,temp,humidity\n'
+    ts_list = data['ts']
+    temp_list = data['temp']
+    humidity_list = data['humidity']
+    p = 0
+    min_len = min(len(ts_list), len(temp_list), len(humidity_list))
+    while p < min_len:
+        content += str(float(ts_list[p]['value'])) + ',' + \
+            str(temp_list[p]['value']) + ',' + \
+            str(humidity_list[p]['value']) + '\n'
+        p += 1
+    saveFile = './temp_humidity_sensor_1' + '.csv'
+    with open(saveFile, 'w') as f:
+        f.write(content)
+
+    print('Device Data Fetched')
 
 
 # 云平台账户
@@ -51,4 +72,8 @@ password = "123123"
 token = getJWTToken(username, password)
 
 # 查看指定设备数据
-queryDeviceData(token)
+# 环境一下温湿度传感器的设备 ID
+temp_humidity_sensor_1_id = 'f6079300-b552-11ec-b1a5-dfb596ee76e2'
+# 查询 时间戳, 温度, 湿度 三项
+query_keys = ['ts', 'temp', 'humidity']
+queryDeviceData(token, temp_humidity_sensor_1_id, query_keys)
